@@ -2,6 +2,8 @@ import streamlit as st
 
 from src.resume_parser import extract_text_from_pdf
 from src.llm import CandidateProfile, extract_candidate_profile
+from src.profile_engine import generate_candidate_insights
+
 
 
 st.set_page_config(
@@ -40,6 +42,14 @@ if uploaded_file is not None:
             resume_text
         )
 
+    with st.spinner("Generating Candidate Insights"):
+
+        candidate_insights = generate_candidate_insights(candidate_profile)
+
     st.subheader("Candidate Profile")
 
     st.json(candidate_profile.model_dump())
+
+    st.subheader("🤖 AI Candidate Insights")
+
+    st.json(candidate_insights.model_dump())
