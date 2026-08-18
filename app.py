@@ -6,6 +6,7 @@ from src.profile_engine import generate_candidate_insights
 from src.intake_schema import CandidatePreferences
 from src.matching_engine import find_matching_jobs
 from src.rag_engine import generate_rag_response
+from src.screening_engine import calculate_screening_score
 
 
 # ==================================================
@@ -30,6 +31,9 @@ if "candidate_preferences" not in st.session_state:
 
 if "matched_jobs" not in st.session_state:
     st.session_state.matched_jobs = None
+
+if "screening_results" not in st.session_state:
+    st.session_state.screening_results = None
 
 if "preferred_location" not in st.session_state:
     st.session_state.preferred_location = ""
@@ -81,7 +85,7 @@ if uploaded_file is not None:
 
 
     # ==================================================
-    # STEP 1: EXTRACT TEXT FROM RESUME
+    # STEP 1 — RESUME TEXT EXTRACTION
     # ==================================================
 
     resume_text = extract_text_from_pdf(
@@ -98,7 +102,7 @@ if uploaded_file is not None:
 
 
     # ==================================================
-    # STEP 2: EXTRACT CANDIDATE PROFILE
+    # STEP 2 — CANDIDATE PROFILE EXTRACTION
     # ==================================================
 
     with st.spinner(
@@ -109,8 +113,6 @@ if uploaded_file is not None:
             resume_text
         )
 
-
-    # Save candidate profile
 
     st.session_state.candidate_profile = (
         candidate_profile
@@ -125,7 +127,7 @@ if uploaded_file is not None:
 
 
     # ==================================================
-    # STEP 3: GENERATE AI CANDIDATE INSIGHTS
+    # STEP 3 — AI CANDIDATE INSIGHTS
     # ==================================================
 
     with st.spinner(
@@ -147,7 +149,7 @@ if uploaded_file is not None:
 
 
     # ==================================================
-    # STEP 4: RECRUITER SCREENING
+    # STEP 4 — RECRUITER SCREENING
     # ==================================================
 
     st.subheader("💬 Recruiter Screening")
@@ -231,7 +233,7 @@ if uploaded_file is not None:
 
 
     # --------------------------------------------------
-    # QUESTION 3 — ROLE
+    # QUESTION 3 — INTERESTED ROLE
     # --------------------------------------------------
 
     if st.session_state.intake_step == 2:
@@ -331,7 +333,7 @@ if uploaded_file is not None:
 
 
     # ==================================================
-    # STEP 5: INTAKE COMPLETED
+    # STEP 5 — INTAKE COMPLETED
     # ==================================================
 
     if st.session_state.intake_step == 5:
@@ -342,7 +344,7 @@ if uploaded_file is not None:
 
 
         # --------------------------------------------------
-        # CREATE STRUCTURED PREFERENCES
+        # CREATE CANDIDATE PREFERENCES
         # --------------------------------------------------
 
         candidate_preferences = CandidatePreferences(
@@ -369,17 +371,13 @@ if uploaded_file is not None:
         )
 
 
-        # --------------------------------------------------
-        # SAVE PREFERENCES
-        # --------------------------------------------------
-
         st.session_state.candidate_preferences = (
             candidate_preferences
         )
 
 
         # --------------------------------------------------
-        # DISPLAY PREFERENCES
+        # DISPLAY CANDIDATE PREFERENCES
         # --------------------------------------------------
 
         st.subheader(
@@ -392,7 +390,7 @@ if uploaded_file is not None:
 
 
         # ==================================================
-        # STEP 6: JOB MATCHING
+        # STEP 6 — JOB MATCHING
         # ==================================================
 
         st.subheader(
@@ -421,22 +419,59 @@ if uploaded_file is not None:
                 )
 
 
-            # Save matching results
-
             st.session_state.matched_jobs = (
                 matched_jobs
             )
 
 
-        # --------------------------------------------------
-        # DISPLAY MATCHED JOBS
-        # --------------------------------------------------
+            # Reset old screening results
 
-        if st.session_state.matched_jobs:
+            st.session_state.screening_results = []
 
-            for match in st.session_state.matched_jobs:
+
+            # ==================================================
+            # STEP 7 — SCREENING SCORE
+            # ==================================================
+
+            for match in matched_jobs:
 
                 job = match["job"]
+
+
+                screening_result = (
+                    calculate_screening_score(
+
+                        st.session_state.candidate_profile,
+
+                        st.session_state.candidate_preferences,
+
+                        job
+                    )
+                )
+
+
+                st.session_state.screening_results.append(
+                    {
+                        "job": job,
+                        "distance": match["distance"],
+                        "screening": screening_result
+                    }
+                )
+
+
+        # ==================================================
+        # DISPLAY MATCHING + SCREENING RESULTS
+        # ==================================================
+
+        if st.session_state.screening_results:
+
+            for result in st.session_state.screening_results:
+
+                job = result["job"]
+
+                distance = result["distance"]
+
+                screening = result["screening"]
 
 
                 st.markdown(
@@ -444,27 +479,115 @@ if uploaded_file is not None:
                 )
 
 
+                # --------------------------------------------------
+                # MATCH SCORE
+                # --------------------------------------------------
+
+                st.metric(
+                    "🎯 Match Score",
+                    f"{screening.match_score}%"
+                )
+
+
+                # --------------------------------------------------
+                # JOB INFORMATION
+                # --------------------------------------------------
+
                 st.write(
                     f"📍 **Location:** "
                     f"{job.location}"
                 )
 
-
                 st.write(
-                    f"💼 **Experience:** "
+                    f"💼 **Experience Required:** "
                     f"{job.experience}"
                 )
 
-
                 st.write(
-                    f"🛠️ **Skills:** "
+                    f"🛠️ **Required Skills:** "
                     f"{', '.join(job.skills)}"
                 )
 
 
+                # --------------------------------------------------
+                # SKILL OVERLAP
+                # --------------------------------------------------
+
+                if screening.skill_overlap:
+
+                    st.write(
+                        "✅ **Matching Skills:** "
+                        + ", ".join(
+                            screening.skill_overlap
+                        )
+                    )
+
+                else:
+
+                    st.write(
+                        "✅ **Matching Skills:** None"
+                    )
+
+
+                # --------------------------------------------------
+                # MISSING SKILLS
+                # --------------------------------------------------
+
+                if screening.missing_skills:
+
+                    st.write(
+                        "⚠️ **Missing Skills:** "
+                        + ", ".join(
+                            screening.missing_skills
+                        )
+                    )
+
+                else:
+
+                    st.write(
+                        "⚠️ **Missing Skills:** None"
+                    )
+
+
+                # --------------------------------------------------
+                # EXPERIENCE MATCH
+                # --------------------------------------------------
+
+                experience_status = (
+                    "Yes"
+                    if screening.experience_match
+                    else "No"
+                )
+
                 st.write(
-                    f"🔎 **Similarity Distance:** "
-                    f"{match['distance']:.4f}"
+                    f"📊 **Experience Match:** "
+                    f"{experience_status}"
+                )
+
+
+                # --------------------------------------------------
+                # LOCATION MATCH
+                # --------------------------------------------------
+
+                location_status = (
+                    "Yes"
+                    if screening.location_match
+                    else "No"
+                )
+
+                st.write(
+                    f"📍 **Location Match:** "
+                    f"{location_status}"
+                )
+
+
+                # --------------------------------------------------
+                # FAISS DISTANCE
+                # --------------------------------------------------
+
+                st.write(
+                    f"🔎 **Semantic Distance:** "
+                    f"{distance:.4f}"
                 )
 
 
@@ -472,7 +595,7 @@ if uploaded_file is not None:
 
 
             # ==================================================
-            # STEP 7: RAG RECRUITER ASSISTANT
+            # STEP 8 — RAG AI RECRUITER
             # ==================================================
 
             st.subheader(
@@ -482,10 +605,12 @@ if uploaded_file is not None:
 
             user_query = st.text_input(
                 "Ask a question about your job matches",
+
                 placeholder=(
                     "Example: Why am I a good fit "
                     "for these jobs?"
                 ),
+
                 key="rag_question"
             )
 
