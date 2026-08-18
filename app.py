@@ -4,11 +4,13 @@ from src.resume_parser import extract_text_from_pdf
 from src.llm import extract_candidate_profile
 from src.profile_engine import generate_candidate_insights
 from src.intake_schema import CandidatePreferences
+from src.matching_engine import find_matching_jobs
+from src.rag_engine import generate_rag_response
 
 
-# --------------------------------------------------
+# ==================================================
 # PAGE CONFIGURATION
-# --------------------------------------------------
+# ==================================================
 
 st.set_page_config(
     page_title="AI Recruitment Assistant",
@@ -16,9 +18,44 @@ st.set_page_config(
 )
 
 
-# --------------------------------------------------
+# ==================================================
+# SESSION STATE INITIALIZATION
+# ==================================================
+
+if "candidate_profile" not in st.session_state:
+    st.session_state.candidate_profile = None
+
+if "candidate_preferences" not in st.session_state:
+    st.session_state.candidate_preferences = None
+
+if "matched_jobs" not in st.session_state:
+    st.session_state.matched_jobs = None
+
+if "preferred_location" not in st.session_state:
+    st.session_state.preferred_location = ""
+
+if "salary_expectation" not in st.session_state:
+    st.session_state.salary_expectation = ""
+
+if "interested_role" not in st.session_state:
+    st.session_state.interested_role = ""
+
+if "work_preference" not in st.session_state:
+    st.session_state.work_preference = ""
+
+if "notice_period" not in st.session_state:
+    st.session_state.notice_period = ""
+
+if "intake_started" not in st.session_state:
+    st.session_state.intake_started = False
+
+if "intake_step" not in st.session_state:
+    st.session_state.intake_step = 0
+
+
+# ==================================================
 # WELCOME SCREEN
-# --------------------------------------------------
+# ==================================================
 
 st.title("🤖 AI Recruitment Assistant")
 
@@ -28,9 +65,9 @@ st.write(
 )
 
 
-# --------------------------------------------------
+# ==================================================
 # RESUME UPLOAD
-# --------------------------------------------------
+# ==================================================
 
 uploaded_file = st.file_uploader(
     "Upload your resume",
@@ -43,13 +80,15 @@ if uploaded_file is not None:
     st.success("Resume uploaded successfully!")
 
 
-    # --------------------------------------------------
+    # ==================================================
     # STEP 1: EXTRACT TEXT FROM RESUME
-    # --------------------------------------------------
+    # ==================================================
 
-    resume_text = extract_text_from_pdf(uploaded_file)
+    resume_text = extract_text_from_pdf(
+        uploaded_file
+    )
 
-    st.subheader("Extracted Resume Text")
+    st.subheader("📄 Extracted Resume Text")
 
     st.text_area(
         "Resume content",
@@ -58,32 +97,45 @@ if uploaded_file is not None:
     )
 
 
-    # --------------------------------------------------
+    # ==================================================
     # STEP 2: EXTRACT CANDIDATE PROFILE
-    # --------------------------------------------------
+    # ==================================================
 
-    with st.spinner("Analyzing your resume..."):
+    with st.spinner(
+        "Analyzing your resume..."
+    ):
 
         candidate_profile = extract_candidate_profile(
             resume_text
         )
 
 
-    st.subheader("Candidate Profile")
+    # Save candidate profile
+
+    st.session_state.candidate_profile = (
+        candidate_profile
+    )
+
+
+    st.subheader("👤 Candidate Profile")
 
     st.json(
         candidate_profile.model_dump()
     )
 
 
-    # --------------------------------------------------
+    # ==================================================
     # STEP 3: GENERATE AI CANDIDATE INSIGHTS
-    # --------------------------------------------------
+    # ==================================================
 
-    with st.spinner("Generating Candidate Insights..."):
+    with st.spinner(
+        "Generating Candidate Insights..."
+    ):
 
-        candidate_insights = generate_candidate_insights(
-            candidate_profile
+        candidate_insights = (
+            generate_candidate_insights(
+                candidate_profile
+            )
         )
 
 
@@ -94,29 +146,26 @@ if uploaded_file is not None:
     )
 
 
-    # --------------------------------------------------
+    # ==================================================
     # STEP 4: RECRUITER SCREENING
-    # --------------------------------------------------
+    # ==================================================
 
     st.subheader("💬 Recruiter Screening")
 
 
-    # Initialize screening state
-    if "intake_started" not in st.session_state:
-        st.session_state.intake_started = False
+    # --------------------------------------------------
+    # START SCREENING
+    # --------------------------------------------------
 
-    if "intake_step" not in st.session_state:
-        st.session_state.intake_step = 0
-
-
-    # Start screening
-    if st.button("Start Recruiter Screening"):
+    if st.button(
+        "Start Recruiter Screening"
+    ):
 
         st.session_state.intake_started = True
 
 
     # --------------------------------------------------
-    # QUESTION 1 — PREFERRED LOCATION
+    # QUESTION 1 — LOCATION
     # --------------------------------------------------
 
     if st.session_state.intake_started:
@@ -129,8 +178,9 @@ if uploaded_file is not None:
 
             location = st.text_input(
                 "Preferred location",
-                key="preferred_location"
+                key="location_input"
             )
+
 
             if st.button(
                 "Next",
@@ -139,13 +189,17 @@ if uploaded_file is not None:
 
                 if location:
 
+                    st.session_state.preferred_location = (
+                        location
+                    )
+
                     st.session_state.intake_step = 1
 
                     st.rerun()
 
 
     # --------------------------------------------------
-    # QUESTION 2 — SALARY EXPECTATION
+    # QUESTION 2 — SALARY
     # --------------------------------------------------
 
     if st.session_state.intake_step == 1:
@@ -156,8 +210,9 @@ if uploaded_file is not None:
 
         salary = st.text_input(
             "Salary expectation",
-            key="salary_expectation"
+            key="salary_input"
         )
+
 
         if st.button(
             "Next",
@@ -166,13 +221,17 @@ if uploaded_file is not None:
 
             if salary:
 
+                st.session_state.salary_expectation = (
+                    salary
+                )
+
                 st.session_state.intake_step = 2
 
                 st.rerun()
 
 
     # --------------------------------------------------
-    # QUESTION 3 — INTERESTED ROLE
+    # QUESTION 3 — ROLE
     # --------------------------------------------------
 
     if st.session_state.intake_step == 2:
@@ -183,8 +242,9 @@ if uploaded_file is not None:
 
         role = st.text_input(
             "Interested role",
-            key="interested_role"
+            key="role_input"
         )
+
 
         if st.button(
             "Next",
@@ -192,6 +252,10 @@ if uploaded_file is not None:
         ):
 
             if role:
+
+                st.session_state.interested_role = (
+                    role
+                )
 
                 st.session_state.intake_step = 3
 
@@ -215,8 +279,10 @@ if uploaded_file is not None:
                 "Onsite",
                 "Hybrid",
                 "Any"
-            ]
+            ],
+            key="work_preference_input"
         )
+
 
         if st.button(
             "Next",
@@ -244,8 +310,9 @@ if uploaded_file is not None:
 
         notice_period = st.text_input(
             "Notice period",
-            key="notice_period"
+            key="notice_period_input"
         )
+
 
         if st.button(
             "Finish",
@@ -254,14 +321,18 @@ if uploaded_file is not None:
 
             if notice_period:
 
+                st.session_state.notice_period = (
+                    notice_period
+                )
+
                 st.session_state.intake_step = 5
 
                 st.rerun()
 
 
-    # --------------------------------------------------
-    # INTAKE COMPLETED
-    # --------------------------------------------------
+    # ==================================================
+    # STEP 5: INTAKE COMPLETED
+    # ==================================================
 
     if st.session_state.intake_step == 5:
 
@@ -270,33 +341,176 @@ if uploaded_file is not None:
         )
 
 
-        # Create structured CandidatePreferences object
+        # --------------------------------------------------
+        # CREATE STRUCTURED PREFERENCES
+        # --------------------------------------------------
 
         candidate_preferences = CandidatePreferences(
+
             preferred_location=(
                 st.session_state.preferred_location
             ),
+
             salary_expectation=(
                 st.session_state.salary_expectation
             ),
+
             interested_role=(
                 st.session_state.interested_role
             ),
+
             work_preference=(
                 st.session_state.work_preference
             ),
+
             notice_period=(
                 st.session_state.notice_period
             )
         )
 
 
-        # Display structured candidate preferences
+        # --------------------------------------------------
+        # SAVE PREFERENCES
+        # --------------------------------------------------
+
+        st.session_state.candidate_preferences = (
+            candidate_preferences
+        )
+
+
+        # --------------------------------------------------
+        # DISPLAY PREFERENCES
+        # --------------------------------------------------
 
         st.subheader(
-            "Candidate Preferences"
+            "📋 Candidate Preferences"
         )
 
         st.json(
             candidate_preferences.model_dump()
         )
+
+
+        # ==================================================
+        # STEP 6: JOB MATCHING
+        # ==================================================
+
+        st.subheader(
+            "🎯 Recommended Jobs"
+        )
+
+
+        if st.button(
+            "Find Matching Jobs",
+            key="find_jobs"
+        ):
+
+            with st.spinner(
+                "Finding the best matching jobs..."
+            ):
+
+                matched_jobs = find_matching_jobs(
+
+                    st.session_state.candidate_profile,
+
+                    st.session_state.candidate_preferences,
+
+                    "data/jobs.json",
+
+                    top_k=5
+                )
+
+
+            # Save matching results
+
+            st.session_state.matched_jobs = (
+                matched_jobs
+            )
+
+
+        # --------------------------------------------------
+        # DISPLAY MATCHED JOBS
+        # --------------------------------------------------
+
+        if st.session_state.matched_jobs:
+
+            for match in st.session_state.matched_jobs:
+
+                job = match["job"]
+
+
+                st.markdown(
+                    f"### 💼 {job.title}"
+                )
+
+
+                st.write(
+                    f"📍 **Location:** "
+                    f"{job.location}"
+                )
+
+
+                st.write(
+                    f"💼 **Experience:** "
+                    f"{job.experience}"
+                )
+
+
+                st.write(
+                    f"🛠️ **Skills:** "
+                    f"{', '.join(job.skills)}"
+                )
+
+
+                st.write(
+                    f"🔎 **Similarity Distance:** "
+                    f"{match['distance']:.4f}"
+                )
+
+
+                st.divider()
+
+
+            # ==================================================
+            # STEP 7: RAG RECRUITER ASSISTANT
+            # ==================================================
+
+            st.subheader(
+                "🤖 Ask the AI Recruiter"
+            )
+
+
+            user_query = st.text_input(
+                "Ask a question about your job matches",
+                placeholder=(
+                    "Example: Why am I a good fit "
+                    "for these jobs?"
+                ),
+                key="rag_question"
+            )
+
+
+            if user_query:
+
+                with st.spinner(
+                    "AI Recruiter is analyzing "
+                    "your profile..."
+                ):
+
+                    response = generate_rag_response(
+
+                        st.session_state.candidate_profile,
+
+                        st.session_state.candidate_preferences,
+
+                        st.session_state.matched_jobs,
+
+                        user_query
+                    )
+
+
+                st.subheader(
+                    "💬 AI Recruiter Response"
+                )
+
+                st.write(response)
