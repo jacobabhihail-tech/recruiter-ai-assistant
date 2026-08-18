@@ -7,6 +7,7 @@ from src.intake_schema import CandidatePreferences
 from src.matching_engine import find_matching_jobs
 from src.rag_engine import generate_rag_response
 from src.screening_engine import calculate_screening_score
+from src.interview_engine import generate_interview_questions
 
 
 # ==================================================
@@ -26,6 +27,9 @@ st.set_page_config(
 if "candidate_profile" not in st.session_state:
     st.session_state.candidate_profile = None
 
+if "candidate_insights" not in st.session_state:
+    st.session_state.candidate_insights = None
+
 if "candidate_preferences" not in st.session_state:
     st.session_state.candidate_preferences = None
 
@@ -34,6 +38,9 @@ if "matched_jobs" not in st.session_state:
 
 if "screening_results" not in st.session_state:
     st.session_state.screening_results = None
+
+if "interview_questions" not in st.session_state:
+    st.session_state.interview_questions = None
 
 if "preferred_location" not in st.session_state:
     st.session_state.preferred_location = ""
@@ -102,21 +109,30 @@ if uploaded_file is not None:
 
 
     # ==================================================
-    # STEP 2 — CANDIDATE PROFILE EXTRACTION
+    # STEP 2 — CANDIDATE PROFILE
     # ==================================================
 
-    with st.spinner(
-        "Analyzing your resume..."
-    ):
+    if st.session_state.candidate_profile is None:
 
-        candidate_profile = extract_candidate_profile(
-            resume_text
+        with st.spinner(
+            "Analyzing your resume..."
+        ):
+
+            candidate_profile = (
+                extract_candidate_profile(
+                    resume_text
+                )
+            )
+
+        st.session_state.candidate_profile = (
+            candidate_profile
         )
 
+    else:
 
-    st.session_state.candidate_profile = (
-        candidate_profile
-    )
+        candidate_profile = (
+            st.session_state.candidate_profile
+        )
 
 
     st.subheader("👤 Candidate Profile")
@@ -127,17 +143,29 @@ if uploaded_file is not None:
 
 
     # ==================================================
-    # STEP 3 — AI CANDIDATE INSIGHTS
+    # STEP 3 — CANDIDATE INSIGHTS
     # ==================================================
 
-    with st.spinner(
-        "Generating Candidate Insights..."
-    ):
+    if st.session_state.candidate_insights is None:
+
+        with st.spinner(
+            "Generating Candidate Insights..."
+        ):
+
+            candidate_insights = (
+                generate_candidate_insights(
+                    candidate_profile
+                )
+            )
+
+        st.session_state.candidate_insights = (
+            candidate_insights
+        )
+
+    else:
 
         candidate_insights = (
-            generate_candidate_insights(
-                candidate_profile
-            )
+            st.session_state.candidate_insights
         )
 
 
@@ -183,7 +211,6 @@ if uploaded_file is not None:
                 key="location_input"
             )
 
-
             if st.button(
                 "Next",
                 key="location_next"
@@ -215,7 +242,6 @@ if uploaded_file is not None:
             key="salary_input"
         )
 
-
         if st.button(
             "Next",
             key="salary_next"
@@ -233,7 +259,7 @@ if uploaded_file is not None:
 
 
     # --------------------------------------------------
-    # QUESTION 3 — INTERESTED ROLE
+    # QUESTION 3 — ROLE
     # --------------------------------------------------
 
     if st.session_state.intake_step == 2:
@@ -246,7 +272,6 @@ if uploaded_file is not None:
             "Interested role",
             key="role_input"
         )
-
 
         if st.button(
             "Next",
@@ -285,7 +310,6 @@ if uploaded_file is not None:
             key="work_preference_input"
         )
 
-
         if st.button(
             "Next",
             key="work_next"
@@ -314,7 +338,6 @@ if uploaded_file is not None:
             "Notice period",
             key="notice_period_input"
         )
-
 
         if st.button(
             "Finish",
@@ -377,7 +400,7 @@ if uploaded_file is not None:
 
 
         # --------------------------------------------------
-        # DISPLAY CANDIDATE PREFERENCES
+        # DISPLAY PREFERENCES
         # --------------------------------------------------
 
         st.subheader(
@@ -424,19 +447,16 @@ if uploaded_file is not None:
             )
 
 
-            # Reset old screening results
+            # --------------------------------------------------
+            # CALCULATE SCREENING RESULTS
+            # --------------------------------------------------
 
-            st.session_state.screening_results = []
+            screening_results = []
 
-
-            # ==================================================
-            # STEP 7 — SCREENING SCORE
-            # ==================================================
 
             for match in matched_jobs:
 
                 job = match["job"]
-
 
                 screening_result = (
                     calculate_screening_score(
@@ -450,7 +470,7 @@ if uploaded_file is not None:
                 )
 
 
-                st.session_state.screening_results.append(
+                screening_results.append(
                     {
                         "job": job,
                         "distance": match["distance"],
@@ -459,8 +479,13 @@ if uploaded_file is not None:
                 )
 
 
+            st.session_state.screening_results = (
+                screening_results
+            )
+
+
         # ==================================================
-        # DISPLAY MATCHING + SCREENING RESULTS
+        # STEP 7 — SCREENING RESULTS
         # ==================================================
 
         if st.session_state.screening_results:
@@ -479,29 +504,23 @@ if uploaded_file is not None:
                 )
 
 
-                # --------------------------------------------------
-                # MATCH SCORE
-                # --------------------------------------------------
-
                 st.metric(
                     "🎯 Match Score",
                     f"{screening.match_score}%"
                 )
 
 
-                # --------------------------------------------------
-                # JOB INFORMATION
-                # --------------------------------------------------
-
                 st.write(
                     f"📍 **Location:** "
                     f"{job.location}"
                 )
 
+
                 st.write(
                     f"💼 **Experience Required:** "
                     f"{job.experience}"
                 )
+
 
                 st.write(
                     f"🛠️ **Required Skills:** "
@@ -510,7 +529,7 @@ if uploaded_file is not None:
 
 
                 # --------------------------------------------------
-                # SKILL OVERLAP
+                # MATCHING SKILLS
                 # --------------------------------------------------
 
                 if screening.skill_overlap:
@@ -595,7 +614,7 @@ if uploaded_file is not None:
 
 
             # ==================================================
-            # STEP 8 — RAG AI RECRUITER
+            # STEP 8 — RAG RECRUITER ASSISTANT
             # ==================================================
 
             st.subheader(
@@ -639,3 +658,123 @@ if uploaded_file is not None:
                 )
 
                 st.write(response)
+
+
+            # ==================================================
+            # STEP 9 — INTERVIEW QUESTION GENERATOR
+            # ==================================================
+
+            st.subheader(
+                "🎤 Interview Question Generator"
+            )
+
+
+            st.write(
+                "Select a recommended job and generate "
+                "personalized interview questions based "
+                "on the candidate profile and job requirements."
+            )
+
+
+            job_options = [
+                result["job"]
+                for result
+                in st.session_state.screening_results
+            ]
+
+
+            selected_job = st.selectbox(
+                "Select a job",
+
+                job_options,
+
+                format_func=lambda job: (
+                    f"{job.title} | "
+                    f"{job.location} | "
+                    f"{job.experience}"
+                ),
+
+                key="selected_interview_job"
+            )
+
+
+            if st.button(
+                "🎤 Generate Interview Questions",
+                key="generate_interview_questions"
+            ):
+
+                with st.spinner(
+                    "Generating personalized interview questions..."
+                ):
+
+                    interview_questions = (
+                        generate_interview_questions(
+
+                            st.session_state.candidate_profile,
+
+                            selected_job
+                        )
+                    )
+
+
+                st.session_state.interview_questions = (
+                    interview_questions
+                )
+
+
+            # --------------------------------------------------
+            # DISPLAY INTERVIEW QUESTIONS
+            # --------------------------------------------------
+
+            if st.session_state.interview_questions:
+
+                interview_questions = (
+                    st.session_state.interview_questions
+                )
+
+
+                st.subheader(
+                    "🧠 Personalized Interview Questions"
+                )
+
+
+                st.markdown(
+                    "### 💻 Technical Questions"
+                )
+
+                for index, question in enumerate(
+                    interview_questions.technical_questions,
+                    start=1
+                ):
+
+                    st.write(
+                        f"**{index}. {question}**"
+                    )
+
+
+                st.markdown(
+                    "### 👔 Experience-Based Questions"
+                )
+
+                for index, question in enumerate(
+                    interview_questions.experience_questions,
+                    start=1
+                ):
+
+                    st.write(
+                        f"**{index}. {question}**"
+                    )
+
+
+                st.markdown(
+                    "### 🎯 Role-Specific Questions"
+                )
+
+                for index, question in enumerate(
+                    interview_questions.role_specific_questions,
+                    start=1
+                ):
+
+                    st.write(
+                        f"**{index}. {question}**"
+                    )
