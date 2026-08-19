@@ -8,6 +8,7 @@ from src.matching_engine import find_matching_jobs
 from src.rag_engine import generate_rag_response
 from src.screening_engine import calculate_screening_score
 from src.interview_engine import generate_interview_questions
+from src.candidate_summary_engine import generate_candidate_summary
 
 
 # ==================================================
@@ -33,6 +34,9 @@ if "candidate_insights" not in st.session_state:
 if "candidate_preferences" not in st.session_state:
     st.session_state.candidate_preferences = None
 
+if "candidate_summary" not in st.session_state:
+    st.session_state.candidate_summary = None
+
 if "matched_jobs" not in st.session_state:
     st.session_state.matched_jobs = None
 
@@ -41,6 +45,12 @@ if "screening_results" not in st.session_state:
 
 if "interview_questions" not in st.session_state:
     st.session_state.interview_questions = None
+
+if "rag_response" not in st.session_state:
+    st.session_state.rag_response = None
+
+if "rag_last_query" not in st.session_state:
+    st.session_state.rag_last_query = ""
 
 if "preferred_location" not in st.session_state:
     st.session_state.preferred_location = ""
@@ -413,7 +423,87 @@ if uploaded_file is not None:
 
 
         # ==================================================
-        # STEP 6 — JOB MATCHING
+        # STEP 6 — ATS CANDIDATE SUMMARY
+        # ==================================================
+
+        st.subheader(
+            "📝 ATS Candidate Summary"
+        )
+
+
+        if st.session_state.candidate_summary is None:
+
+            with st.spinner(
+                "Generating ATS candidate summary..."
+            ):
+
+                candidate_summary = (
+                    generate_candidate_summary(
+
+                        st.session_state.candidate_profile,
+
+                        st.session_state.candidate_insights,
+
+                        st.session_state.candidate_preferences
+                    )
+                )
+
+            st.session_state.candidate_summary = (
+                candidate_summary
+            )
+
+        else:
+
+            candidate_summary = (
+                st.session_state.candidate_summary
+            )
+
+
+        # --------------------------------------------------
+        # CANDIDATE SUMMARY
+        # --------------------------------------------------
+
+        st.markdown(
+            "### 👤 Candidate Summary"
+        )
+
+        st.write(
+            candidate_summary.candidate_summary
+        )
+
+
+        # --------------------------------------------------
+        # STRENGTHS
+        # --------------------------------------------------
+
+        st.markdown(
+            "### 💪 Strengths"
+        )
+
+        for strength in candidate_summary.strengths:
+
+            st.write(
+                f"✅ {strength}"
+            )
+
+
+        # --------------------------------------------------
+        # RECRUITER NOTES
+        # --------------------------------------------------
+
+        st.markdown(
+            "### 📝 Recruiter Notes"
+        )
+
+        for note in candidate_summary.recruiter_notes:
+
+            st.write(
+                f"• {note}"
+            )
+
+
+        # ==================================================
+        # STEP 7 — JOB MATCHING
         # ==================================================
 
         st.subheader(
@@ -485,7 +575,7 @@ if uploaded_file is not None:
 
 
         # ==================================================
-        # STEP 7 — SCREENING RESULTS
+        # STEP 8 — SCREENING RESULTS
         # ==================================================
 
         if st.session_state.screening_results:
@@ -614,7 +704,7 @@ if uploaded_file is not None:
 
 
             # ==================================================
-            # STEP 8 — RAG RECRUITER ASSISTANT
+            # STEP 9 — RAG RECRUITER ASSISTANT
             # ==================================================
 
             st.subheader(
@@ -634,34 +724,62 @@ if uploaded_file is not None:
             )
 
 
-            if user_query:
+            if st.button(
+                "Ask AI Recruiter",
+                key="ask_rag"
+            ):
 
-                with st.spinner(
-                    "AI Recruiter is analyzing "
-                    "your profile..."
-                ):
+                if user_query:
 
-                    response = generate_rag_response(
+                    # Only call Gemini if this is a
+                    # new question.
 
-                        st.session_state.candidate_profile,
-
-                        st.session_state.candidate_preferences,
-
-                        st.session_state.matched_jobs,
-
+                    if (
                         user_query
-                    )
+                        != st.session_state.rag_last_query
+                    ):
 
+                        with st.spinner(
+                            "AI Recruiter is analyzing "
+                            "your profile..."
+                        ):
+
+                            response = (
+                                generate_rag_response(
+
+                                    st.session_state.candidate_profile,
+
+                                    st.session_state.candidate_preferences,
+
+                                    st.session_state.matched_jobs,
+
+                                    user_query
+                                )
+                            )
+
+
+                        st.session_state.rag_response = (
+                            response
+                        )
+
+                        st.session_state.rag_last_query = (
+                            user_query
+                        )
+
+
+            if st.session_state.rag_response:
 
                 st.subheader(
                     "💬 AI Recruiter Response"
                 )
 
-                st.write(response)
+                st.write(
+                    st.session_state.rag_response
+                )
 
 
             # ==================================================
-            # STEP 9 — INTERVIEW QUESTION GENERATOR
+            # STEP 10 — INTERVIEW QUESTION GENERATOR
             # ==================================================
 
             st.subheader(
@@ -697,6 +815,10 @@ if uploaded_file is not None:
                 key="selected_interview_job"
             )
 
+
+            # --------------------------------------------------
+            # GENERATE INTERVIEW QUESTIONS
+            # --------------------------------------------------
 
             if st.button(
                 "🎤 Generate Interview Questions",
@@ -738,9 +860,14 @@ if uploaded_file is not None:
                 )
 
 
+                # --------------------------------------------------
+                # TECHNICAL QUESTIONS
+                # --------------------------------------------------
+
                 st.markdown(
                     "### 💻 Technical Questions"
                 )
+
 
                 for index, question in enumerate(
                     interview_questions.technical_questions,
@@ -752,9 +879,14 @@ if uploaded_file is not None:
                     )
 
 
+                # --------------------------------------------------
+                # EXPERIENCE QUESTIONS
+                # --------------------------------------------------
+
                 st.markdown(
                     "### 👔 Experience-Based Questions"
                 )
+
 
                 for index, question in enumerate(
                     interview_questions.experience_questions,
@@ -766,9 +898,14 @@ if uploaded_file is not None:
                     )
 
 
+                # --------------------------------------------------
+                # ROLE-SPECIFIC QUESTIONS
+                # --------------------------------------------------
+
                 st.markdown(
                     "### 🎯 Role-Specific Questions"
                 )
+
 
                 for index, question in enumerate(
                     interview_questions.role_specific_questions,
