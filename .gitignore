@@ -32,7 +32,8 @@ logs/
 
 # Uploaded/generated files
 uploads/
-data/
+data/*
+!data/jobs.json
 
 # Streamlit
 .streamlit/secrets.toml

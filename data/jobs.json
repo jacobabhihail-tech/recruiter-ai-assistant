@@ -1,0 +1,270 @@
+[
+    {
+        "id": 1,
+        "title": "Python Backend Developer",
+        "skills": [
+            "Python",
+            "FastAPI",
+            "Django",
+            "PostgreSQL",
+            "Docker"
+        ],
+        "location": "Bangalore",
+        "experience": "3+ years"
+    },
+    {
+        "id": 2,
+        "title": "Data Analyst",
+        "skills": [
+            "Python",
+            "SQL",
+            "Pandas",
+            "Power BI",
+            "Excel"
+        ],
+        "location": "Bangalore",
+        "experience": "2+ years"
+    },
+    {
+        "id": 3,
+        "title": "Machine Learning Engineer",
+        "skills": [
+            "Python",
+            "Scikit-learn",
+            "TensorFlow",
+            "PyTorch",
+            "SQL"
+        ],
+        "location": "Bangalore",
+        "experience": "2+ years"
+    },
+    {
+        "id": 4,
+        "title": "Data Scientist",
+        "skills": [
+            "Python",
+            "Pandas",
+            "NumPy",
+            "Scikit-learn",
+            "SQL",
+            "Machine Learning"
+        ],
+        "location": "Hyderabad",
+        "experience": "3+ years"
+    },
+    {
+        "id": 5,
+        "title": "GenAI Engineer",
+        "skills": [
+            "Python",
+            "LLMs",
+            "LangChain",
+            "RAG",
+            "FAISS",
+            "FastAPI"
+        ],
+        "location": "Bangalore",
+        "experience": "2+ years"
+    },
+    {
+        "id": 6,
+        "title": "AI Engineer",
+        "skills": [
+            "Python",
+            "Machine Learning",
+            "Deep Learning",
+            "NLP",
+            "TensorFlow"
+        ],
+        "location": "Pune",
+        "experience": "3+ years"
+    },
+    {
+        "id": 7,
+        "title": "Backend Software Engineer",
+        "skills": [
+            "Python",
+            "FastAPI",
+            "REST APIs",
+            "PostgreSQL",
+            "Docker",
+            "AWS"
+        ],
+        "location": "Mumbai",
+        "experience": "4+ years"
+    },
+    {
+        "id": 8,
+        "title": "Full Stack Developer",
+        "skills": [
+            "Python",
+            "React",
+            "JavaScript",
+            "FastAPI",
+            "PostgreSQL"
+        ],
+        "location": "Bangalore",
+        "experience": "3+ years"
+    },
+    {
+        "id": 9,
+        "title": "Cloud Engineer",
+        "skills": [
+            "AWS",
+            "Docker",
+            "Kubernetes",
+            "Python",
+            "Terraform"
+        ],
+        "location": "Chennai",
+        "experience": "4+ years"
+    },
+    {
+        "id": 10,
+        "title": "DevOps Engineer",
+        "skills": [
+            "Docker",
+            "Kubernetes",
+            "AWS",
+            "CI/CD",
+            "Linux",
+            "Terraform"
+        ],
+        "location": "Bangalore",
+        "experience": "3+ years"
+    },
+    {
+        "id": 11,
+        "title": "NLP Engineer",
+        "skills": [
+            "Python",
+            "NLP",
+            "Transformers",
+            "Hugging Face",
+            "PyTorch"
+        ],
+        "location": "Hyderabad",
+        "experience": "2+ years"
+    },
+    {
+        "id": 12,
+        "title": "Data Engineer",
+        "skills": [
+            "Python",
+            "SQL",
+            "ETL",
+            "Apache Spark",
+            "Airflow",
+            "AWS"
+        ],
+        "location": "Bangalore",
+        "experience": "3+ years"
+    },
+    {
+        "id": 13,
+        "title": "Python Django Developer",
+        "skills": [
+            "Python",
+            "Django",
+            "REST APIs",
+            "PostgreSQL",
+            "Redis"
+        ],
+        "location": "Delhi",
+        "experience": "2+ years"
+    },
+    {
+        "id": 14,
+        "title": "Software Engineer",
+        "skills": [
+            "Python",
+            "Java",
+            "SQL",
+            "Git",
+            "REST APIs"
+        ],
+        "location": "Noida",
+        "experience": "2+ years"
+    },
+    {
+        "id": 15,
+        "title": "Cloud Data Engineer",
+        "skills": [
+            "Python",
+            "SQL",
+            "AWS",
+            "Spark",
+            "ETL"
+        ],
+        "location": "Pune",
+        "experience": "4+ years"
+    },
+    {
+        "id": 16,
+        "title": "MLOps Engineer",
+        "skills": [
+            "Python",
+            "Docker",
+            "Kubernetes",
+            "MLflow",
+            "AWS",
+            "CI/CD"
+        ],
+        "location": "Bangalore",
+        "experience": "3+ years"
+    },
+    {
+        "id": 17,
+        "title": "AI Product Engineer",
+        "skills": [
+            "Python",
+            "LLMs",
+            "APIs",
+            "FastAPI",
+            "RAG",
+            "Cloud"
+        ],
+        "location": "Mumbai",
+        "experience": "3+ years"
+    },
+    {
+        "id": 18,
+        "title": "Business Data Analyst",
+        "skills": [
+            "SQL",
+            "Excel",
+            "Power BI",
+            "Python",
+            "Data Visualization"
+        ],
+        "location": "Chandigarh",
+        "experience": "2+ years"
+    },
+    {
+        "id": 19,
+        "title": "Deep Learning Engineer",
+        "skills": [
+            "Python",
+            "PyTorch",
+            "TensorFlow",
+            "Deep Learning",
+            "Computer Vision"
+        ],
+        "location": "Bangalore",
+        "experience": "3+ years"
+    },
+    {
+        "id": 20,
+        "title": "Generative AI Developer",
+        "skills": [
+            "Python",
+            "LLMs",
+            "Prompt Engineering",
+            "RAG",
+            "LangChain",
+            "Vector Databases"
+        ],
+        "location": "Hyderabad",
+        "experience": "2+ years"
+    }
+]
